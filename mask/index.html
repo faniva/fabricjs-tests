@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+
+    <style>
+        body{
+            padding: 3em;
+        }
+        canvas{
+        border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+
+        <canvas id="c" width="600" height="600"></canvas>
+ 
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/2.2.2/fabric.js" ></script>
+
+<script>
+    
+    var canvas = new fabric.Canvas('c'),
+        maskUrl = "images/mask.jpg",
+        baseUrl = "images/q9aLMza.png",
+        baseImg,
+        maskImg
+    ;
+
+    // Set overrides
+    fabric.Object.prototype.set({
+        originX: "left",
+        originY: "top",
+        centeredScaling: true,
+    })
+
+    // Clip region
+    const clipRect1 = new fabric.Rect({
+        width : 100,
+        height: 300,
+        // fill: '#DDD',
+        fill: 'transparent',
+        stroke: 'black',
+        strokeWidth: 0,
+        // selectable: false,
+        clipFor : 'cat'
+
+    });
+
+    canvas.add(clipRect1);
+    clipRect1.center();
+
+    function degToRad(degrees) {
+        return degrees * (Math.PI / 180);
+    }
+
+    function findByClipName(name) {
+        return canvas.getObjects().filter( object => object.clipFor === name )[0]
+    }
+
+    function clipByName(ctx){
+        this.setCoords();
+        var clipRect = findByClipName(this.clipName);
+        var scaleXTo1 = (1 / this.scaleX);
+        var scaleYTo1 = (1 / this.scaleY);
+        ctx.save();
+
+        var ctxLeft = -( this.width / 2 ) + clipRect.strokeWidth;
+		var ctxTop = -( this.height / 2 ) + clipRect.strokeWidth;
+		var ctxWidth = clipRect.width - clipRect.strokeWidth;
+        var ctxHeight = clipRect.height - clipRect.strokeWidth;
+
+        ctx.translate( ctxLeft, ctxTop );
+        ctx.scale(scaleXTo1, scaleYTo1);
+        ctx.rotate(degToRad(this.angle * -1));
+
+
+        ctx.beginPath();
+        // ctx.fillStyle = "red";
+
+        ctx.rect(
+            clipRect.left - this.oCoords.tl.x,
+            clipRect.top - this.oCoords.tl.y,
+            clipRect.width,
+            clipRect.height
+        );
+        // ctx.fill();
+        ctx.closePath();
+        ctx.restore();
+    }
+
+
+    var catImg = new Image();
+    catImg.onload = function () {    
+        var cat = new fabric.Image(catImg, {
+            // angle: 45,
+            width: 500,
+            height: 500,
+            left: 230,
+            top: 170,
+            // scaleX : 0.5,
+            // scaleY : 0.5,
+            clipName: 'cat',
+            clipTo: function(ctx) { 
+                console.log(this);
+                // debugger;
+                // return _.bind(clipByName, cat)(ctx)
+                return clipByName.call(this, ctx); 
+            }
+        });
+        canvas.add(cat);
+        cat.center();
+
+    };
+    catImg.src = baseUrl;
+
+
+
+
+
+    // fabric.Image.fromURL(baseUrl, function(imgObj){
+    //     imgObj.set({
+    //         clipTo : function(ctx){
+    //             const rect = new fabric.Rect({
+    //                 width : 100,
+    //                 height: 300,
+    //                 top : 200,
+    //                 left: 200,
+    //                 fill: 'transparent',
+            
+    //             })
+
+    //             rect.render(ctx);
+               
+    //         }
+    //     });
+
+
+    //     canvas.add(imgObj)
+    //     imgObj.center();
+    //     canvas.renderAll();
+
+       
+    // })
+
+
+    // const circle = new fabric.Circle({
+    //     radius : 100,
+    //     clipTo : function(ctx){
+    //         // const rect = new fabric.Rect({
+    //         //     width : 100,
+    //         //     height: 300,
+    //         //     top : 200,
+    //         //     left: 200,
+    //         //     fill: 'transparent',
+        
+    //         // })
+
+    //         // rect.render(ctx);
+    //         ctx.arc(0, 0, 40, 0, Math.PI * 2, true);
+    //     }
+    // })
+
+    // const rect = new fabric.Rect({
+    //     width : 100,
+    //     height: 300,
+    //     top : 200,
+    //     left: 200,
+    //     fill: 'red',
+
+    // })
+
+    // canvas.add(rect)
+
+
+    // debugger;
+
+    // canvas.add(circle)
+
+
+    // circle.center();
+    // canvas.renderAll();
+        
+    
+</script>
+    
+</body>
+</html>
