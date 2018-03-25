@@ -25,7 +25,7 @@
             border: none;
             outline: none;
             color : white;
-            padding: 1em 1.5em;
+            padding: 10px 12px;
             border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
@@ -53,8 +53,9 @@
 
         <div id="ui-controls">
             <div class="demos">
-                    <span>Demos: </span>
-                    <button id="demo1" onClick="loadDemo1()">LOAD DEMO 1</button>
+                    <span>Load Demo: </span>
+                    <button id="demo1" onClick="loadDemo1()">DEMO 1</button>
+                    <button id="demo2" onClick="loadDemo2()">DEMO 2</button>
             </div>
             
             <button class="mask small disabled" disabled="true">MASK OBJECTS</button>
@@ -73,7 +74,7 @@
     
     var canvas = new fabric.Canvas('c'),
         maskUrl = "images/mask.jpg",
-        baseUrl = "images/q9aLMza.png",
+        baseUrl = "images/m2P5xz0.jpg",
         baseImg,
         maskImg,
         uiControlsContainer = document.getElementById('ui-controls'),
@@ -260,6 +261,62 @@
     }
     // =======================================
     // Ends Demo 1 
+
+
+    
+    // ================================================================
+    // Demo 2 
+    // ===============================================================
+
+    function loadDemo2(){
+
+        var catImg = new Image();
+        catImg.onload = function () {    
+            var cat = new fabric.Image(catImg, {
+                // angle: 45,
+                width: 500,
+                height: 500,
+                left: 230,
+                top: 170,
+                // scaleX : 0.5,
+                // scaleY : 0.5
+            });
+            canvas.add(cat);
+            cat.center();
+
+            // Clip region 2
+            var clipPoly = new fabric.Polygon([
+                    { x: 180, y: 10 },
+                    { x: 300, y: 50 },
+                    { x: 300, y: 180 },
+                    { x: 180, y: 220 }
+                ],                
+            {
+        
+                left: 0,    
+                top: 0,
+                width: 200,
+                height: 400,
+                fill: '#ddd', /* use transparent for no fill */
+                strokeWidth: 0,
+                name: 'mask2'
+                // selectable: false
+            });
+
+            canvas.add(clipPoly);
+            clipPoly.center();
+
+            objA = cat;
+            objB = clipPoly;
+
+        };
+
+        catImg.src = baseUrl;
+
+    }
+
+    // =======================================
+    // Ends Demo 2 
 
 
    function clip(object, mask){
