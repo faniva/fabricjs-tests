@@ -9,19 +9,65 @@
     <style>
         body{
             padding: 3em;
+            font-family : sans-serif;
         }
         canvas{
         border: 1px solid black;
+        }
+        .container{
+            display: flex;
+        }
+        #ui-controls{
+            margin-left: 3em;
+        }
+        button{
+            background: #225ee5;
+            border: none;
+            outline: none;
+            color : white;
+            padding: 1em 1.5em;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button.small{
+            padding: 12px;
+            background: #e6e6e6;
+            color: inherit;
+        }
+        button.disabled{
+            background: #e6e6e6;
+            color: gray;
+            cursor: not-allowed;
+        }
+        .demos{
+            margin-bottom: 10px;
         }
     </style>
 </head>
 <body>
 
+    <h1>FabricJs Demo: Clipping / Masking</h1>
+    <div class="container">
         <canvas id="c" width="600" height="600"></canvas>
- 
+
+        <div id="ui-controls">
+            <div class="demos">
+                    <span>Demos: </span>
+                    <button id="demo1" onClick="loadDemo1()">LOAD DEMO 1</button>
+            </div>
+            
+            <button class="mask small disabled" disabled="true">MASK OBJECTS</button>
+           
+        </div>
+     
+    </div>
+
+       
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/2.2.2/fabric.js" ></script>
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/2.2.2/fabric.js" ></script> -->
+<script src="fabric.js" ></script>
 
 <script>
     
@@ -29,162 +75,342 @@
         maskUrl = "images/mask.jpg",
         baseUrl = "images/q9aLMza.png",
         baseImg,
-        maskImg
+        maskImg,
+        uiControlsContainer = document.getElementById('ui-controls'),
+        buttons = uiControlsContainer.querySelector('button'),
+        clipBtn = uiControlsContainer.querySelector('.mask'),
+        objA,
+        objB,
+        clipping = false
     ;
 
     // Set overrides
     fabric.Object.prototype.set({
-        originX: "left",
-        originY: "top",
+        originX: "center",
+        originY: "center",
         centeredScaling: true,
     })
 
-    // Clip region
-    const clipRect1 = new fabric.Rect({
-        width : 100,
-        height: 300,
-        // fill: '#DDD',
-        fill: 'transparent',
-        stroke: 'black',
-        strokeWidth: 0,
-        // selectable: false,
-        clipFor : 'cat'
+    fabric.Canvas.prototype.set({
+        // preserveObjectStacking : true
+    })
 
-    });
 
-    canvas.add(clipRect1);
-    clipRect1.center();
+    function init(){
 
-    function degToRad(degrees) {
-        return degrees * (Math.PI / 180);
+        canvas.on('object:modified', ()=> {
+            console.log('object modified')
+        })
+
+        canvas.on('after:render', ()=> {
+            console.log('after render')
+        })
+
+        canvas.on('selection:created', e => {
+            console.log(e);
+            const selected = e.selected;
+            if(selected instanceof Array && selected.length === 2){
+               // Enable the "create mask" button
+               clipBtn.classList.remove('disabled');
+               clipBtn.removeAttribute('disabled');
+        
+           
+            } else {
+                onclearSelection();
+            }
+        })
+
+        canvas.on('selection:cleared', onclearSelection);
+
+        clipBtn.addEventListener('click', onClipBtnClick )
+
+
     }
+
+
+    function onclearSelection(){
+        clipBtn.classList.add('disabled');
+        clipBtn.setAttribute('disabled', true); 
+    }
+
+    function onClipBtnClick(){
+        // debugger;
+        if(objA && objB){
+            if(!clipping){
+                clip(objA, objB);
+                clipping = true;
+                        
+                // Change the button's label
+                this.innerText = "REMOVE MASK"
+            } else {
+                unClip(objA, objB)
+                clipping = false;
+                // Change the button's label
+                this.innerText = "MASK OBJECTS"
+            }
+     
+        }
+
+    }
+
+
+
+    // ================================================================
+    // Demo 1 
+    // ================================================================
+
+
+    function loadDemo1(){
+
+         // Clip region 1
+        const clipRect1 = new fabric.Rect({
+            width : 100,
+            height: 300,
+            fill: '#DDD',
+            // fill: 'transparent',
+            opacity: 1, 
+            stroke: 'black',
+            strokeWidth: 0,
+            // selectable: false,
+            clipFor : 'cat',
+            name : 'mask1',
+            // statefullCache: true
+
+        });
+
+        // Clip region 2
+        var clipPoly = new fabric.Polygon([
+                { x: 180, y: 10 },
+                { x: 300, y: 50 },
+                { x: 300, y: 180 },
+                { x: 180, y: 220 }
+            ], {
+    
+            left: 0,    
+            top: 0,
+            width: 200,
+            height: 400,
+            fill: '#ddd', /* use transparent for no fill */
+            strokeWidth: 0,
+            name: 'mask2'
+            // selectable: false
+        });
+
+        // canvas.add(clipRect1);
+        canvas.add(clipPoly);
+        // clipRect1.center();
+        clipPoly.center();
+
+
+        const circle = new fabric.Circle({
+            radius : 120,
+            clipName: 'mask2',
+            originX : 'left',
+            originY : 'top',
+            strokeWidth: 0,
+            top: 300,
+            left: 5
+        });
+
+        
+        canvas.add(circle)
+        circle.center();
+
+        // Clip the object after a period of time
+
+        // setTimeout(()=>{
+
+        //     // Get the clipping Mask
+        //     // const mask = findByClipName(circle.clipName);
+        //     // clip(circle, clipPoly);
+        //     clip(clipPoly, circle);
+        // },2000)
+
+        objA = circle;
+        objB = clipPoly;
+
+
+        // var catImg = new Image();
+        // catImg.onload = function () {    
+        //     var cat = new fabric.Image(catImg, {
+        //         // angle: 45,
+        //         width: 500,
+        //         height: 500,
+        //         left: 230,
+        //         top: 170,
+        //         // scaleX : 0.5,
+        //         // scaleY : 0.5,
+        //         clipName: 'cat',
+        //         clipTo: function(ctx) { 
+        //             console.log(this);
+        //             // debugger;
+        //             // return _.bind(clipByName, cat)(ctx)
+        //             clipByName.call(this, ctx); 
+        //         }
+        //     });
+        //     canvas.add(cat);
+        //     cat.center();
+
+        // };
+        // catImg.src = baseUrl;
+
+     
+
+        
+    }
+    // =======================================
+    // Ends Demo 1 
+
+
+   function clip(object, mask){
+
+        object.set({
+            clipTo : function(ctx){
+                clipObject.call(this, ctx, mask);               
+            }
+        });
+
+        mask.set({
+            fill: 'transparent',
+            // selectable : false
+        });
+
+        canvas.renderAll();
+
+        // Bind mask events
+        mask.on('moving', onMaskMoving)
+        mask.on('mouseup',onMaskMouseUp)
+
+    }
+
+    function onMaskMoving(e){
+        console.log('mask moving')
+        // mask.setCoords();
+        canvas.renderAll();       
+    }
+
+     function onMaskMouseUp(e){  
+        // alert('mouse up')    
+    }
+
+    function unClip(object,mask){
+        object.set({
+            clipTo : null
+        });
+
+        mask.set({
+            fill: '#ddd',
+            // selectable : false
+        });
+
+        canvas.renderAll();
+
+        mask.off('moving', onMaskMoving);
+        mask.off('mouseup', onMaskMouseUp);
+
+    
+    }
+
+
+   
 
     function findByClipName(name) {
-        return canvas.getObjects().filter( object => object.clipFor === name )[0]
+        return canvas.getObjects().filter( object => object.name  === name )[0]
     }
 
-    function clipByName(ctx){
+    function clipObject(ctx, clipMask = null){
+ 
+        var clipObj = clipMask || findByClipName(this.clipName);
+
+        if(!clipObj){
+            console.log('Clipping mask not found.')
+            return false;
+        }
+
+        // debugger;
+
+        // Update the context coordinates for both objects
         this.setCoords();
-        var clipRect = findByClipName(this.clipName);
+        clipObj.setCoords(); // Very important
+
         var scaleXTo1 = (1 / this.scaleX);
         var scaleYTo1 = (1 / this.scaleY);
         ctx.save();
 
-        var ctxLeft = -( this.width / 2 ) + clipRect.strokeWidth;
-		var ctxTop = -( this.height / 2 ) + clipRect.strokeWidth;
-		var ctxWidth = clipRect.width - clipRect.strokeWidth;
-        var ctxHeight = clipRect.height - clipRect.strokeWidth;
+        var ctxLeft = -( this.width / 2) + clipObj.strokeWidth;
+		var ctxTop = - ( this.height / 2) + clipObj.strokeWidth;
+	
 
         ctx.translate( ctxLeft, ctxTop );
         ctx.scale(scaleXTo1, scaleYTo1);
-        ctx.rotate(degToRad(this.angle * -1));
+        // ctx.rotate(degToRad(this.angle * -1));
+        ctx.rotate(fabric.util.degreesToRadians(this.angle * -1));
 
-
+    
         ctx.beginPath();
         // ctx.fillStyle = "red";
 
-        ctx.rect(
-            clipRect.left - this.oCoords.tl.x,
-            clipRect.top - this.oCoords.tl.y,
-            clipRect.width,
-            clipRect.height
-        );
-        // ctx.fill();
-        ctx.closePath();
+        const isPolygon = clipObj instanceof fabric.Polygon;
+        const isCircle = clipObj instanceof fabric.Circle;
+
+        // polygon cliping area
+        if(isPolygon){
+            // prepare points of polygon
+            var points = [];
+            for(let i in clipObj.points){
+                points.push({
+                    x: clipObj.oCoords.tl.x + clipObj.points[i].x - this.oCoords.tl.x - 3 * clipObj.width / 2,
+                    y: clipObj.oCoords.tl.y + clipObj.points[i].y - this.oCoords.tl.y - clipObj.points[0].y
+                });
+            }
+             
+            // Move to the initial position
+            ctx.moveTo(points[0].x, points[0].y);
+            // Draw the shape
+            for(let i=1; i<points.length; ++i){
+                ctx.lineTo(points[i].x, points[i].y);
+            }
+            // Close the shape
+            ctx.lineTo(points[0].x, points[0].y);
+
+        } else if (isCircle){
+
+            // debugger;
+
+            // circular cliping area
+            ctx.arc(
+                clipObj.left  - this.oCoords.tl.x + clipObj.width / 2,
+                clipObj.top  - this.oCoords.tl.y + clipObj.height / 2,
+                clipObj.radius,
+                0,
+                2 * Math.PI
+            )
+        
+        } else {
+
+            // rectangle cliping area
+            var ctxWidth = clipObj.width - clipObj.strokeWidth;
+            var ctxHeight = clipObj.height - clipObj.strokeWidth;
+        
+            ctx.rect(
+                clipObj.left - this.oCoords.tl.x - clipObj.width / 2,
+                clipObj.top - this.oCoords.tl.y - clipObj.height / 2,
+                clipObj.width,
+                clipObj.height
+            );
+
+        }
+
+
+        ctx.closePath(); 
+       
         ctx.restore();
     }
 
 
-    var catImg = new Image();
-    catImg.onload = function () {    
-        var cat = new fabric.Image(catImg, {
-            // angle: 45,
-            width: 500,
-            height: 500,
-            left: 230,
-            top: 170,
-            // scaleX : 0.5,
-            // scaleY : 0.5,
-            clipName: 'cat',
-            clipTo: function(ctx) { 
-                console.log(this);
-                // debugger;
-                // return _.bind(clipByName, cat)(ctx)
-                return clipByName.call(this, ctx); 
-            }
-        });
-        canvas.add(cat);
-        cat.center();
-
-    };
-    catImg.src = baseUrl;
-
-
-
-
-
-    // fabric.Image.fromURL(baseUrl, function(imgObj){
-    //     imgObj.set({
-    //         clipTo : function(ctx){
-    //             const rect = new fabric.Rect({
-    //                 width : 100,
-    //                 height: 300,
-    //                 top : 200,
-    //                 left: 200,
-    //                 fill: 'transparent',
-            
-    //             })
-
-    //             rect.render(ctx);
-               
-    //         }
-    //     });
-
-
-    //     canvas.add(imgObj)
-    //     imgObj.center();
-    //     canvas.renderAll();
-
-       
-    // })
-
-
-    // const circle = new fabric.Circle({
-    //     radius : 100,
-    //     clipTo : function(ctx){
-    //         // const rect = new fabric.Rect({
-    //         //     width : 100,
-    //         //     height: 300,
-    //         //     top : 200,
-    //         //     left: 200,
-    //         //     fill: 'transparent',
-        
-    //         // })
-
-    //         // rect.render(ctx);
-    //         ctx.arc(0, 0, 40, 0, Math.PI * 2, true);
-    //     }
-    // })
-
-    // const rect = new fabric.Rect({
-    //     width : 100,
-    //     height: 300,
-    //     top : 200,
-    //     left: 200,
-    //     fill: 'red',
-
-    // })
-
-    // canvas.add(rect)
-
-
-    // debugger;
-
-    // canvas.add(circle)
-
-
-    // circle.center();
-    // canvas.renderAll();
+    // Initialize
+    init();
+    
         
     
 </script>
