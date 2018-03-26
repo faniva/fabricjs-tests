@@ -53,9 +53,10 @@
 
         <div id="ui-controls">
             <div class="demos">
-                    <span>Load Demo: </span>
-                    <button id="demo1" onClick="loadDemo1()">DEMO 1</button>
-                    <button id="demo2" onClick="loadDemo2()">DEMO 2</button>
+                <span>Load Demo: </span>
+                <button id="demo1" onClick="loadDemo1()">DEMO 1</button>
+                <button id="demo2" onClick="loadDemo2()">DEMO 2</button>
+                <button id="demo3" onClick="loadDemo3()">DEMO 3</button>
             </div>
             
             <button class="mask small disabled" disabled="true">MASK OBJECTS</button>
@@ -75,6 +76,7 @@
     var canvas = new fabric.Canvas('c'),
         maskUrl = "images/mask.jpg",
         baseUrl = "images/m2P5xz0.jpg",
+        svgUrl = "images/ELEPHANT_C_4.svg",
         baseImg,
         maskImg,
         uiControlsContainer = document.getElementById('ui-controls'),
@@ -93,7 +95,7 @@
     })
 
     fabric.Canvas.prototype.set({
-        // preserveObjectStacking : true
+        preserveObjectStacking : true
     })
 
 
@@ -162,6 +164,7 @@
 
 
     function loadDemo1(){
+        canvas.clear();
 
          // Clip region 1
         const clipRect1 = new fabric.Rect({
@@ -217,46 +220,10 @@
         canvas.add(circle)
         circle.center();
 
-        // Clip the object after a period of time
 
-        // setTimeout(()=>{
-
-        //     // Get the clipping Mask
-        //     // const mask = findByClipName(circle.clipName);
-        //     // clip(circle, clipPoly);
-        //     clip(clipPoly, circle);
-        // },2000)
 
         objA = circle;
         objB = clipPoly;
-
-
-        // var catImg = new Image();
-        // catImg.onload = function () {    
-        //     var cat = new fabric.Image(catImg, {
-        //         // angle: 45,
-        //         width: 500,
-        //         height: 500,
-        //         left: 230,
-        //         top: 170,
-        //         // scaleX : 0.5,
-        //         // scaleY : 0.5,
-        //         clipName: 'cat',
-        //         clipTo: function(ctx) { 
-        //             console.log(this);
-        //             // debugger;
-        //             // return _.bind(clipByName, cat)(ctx)
-        //             clipByName.call(this, ctx); 
-        //         }
-        //     });
-        //     canvas.add(cat);
-        //     cat.center();
-
-        // };
-        // catImg.src = baseUrl;
-
-     
-
         
     }
     // =======================================
@@ -269,7 +236,7 @@
     // ===============================================================
 
     function loadDemo2(){
-
+        canvas.clear();
         var catImg = new Image();
         catImg.onload = function () {    
             var cat = new fabric.Image(catImg, {
@@ -319,6 +286,43 @@
     // Ends Demo 2 
 
 
+
+     // ================================================================
+    // Demo 3 
+    // ===============================================================
+
+    function loadDemo3(){
+        canvas.clear();
+        fabric.loadSVGFromURL(svgUrl, function(objects,options){
+            const svg = fabric.util.groupSVGElements(objects,options);
+            canvas.add(svg);
+            svg.center();
+
+
+            const circle = new fabric.Circle({
+                radius : 120,
+                clipName: 'mask2',
+                strokeWidth: 0,
+                top: 300,
+                left: 5
+            });
+
+            
+            canvas.add(circle)
+            circle.center();
+
+            objA = svg;
+            objB = circle;
+
+
+        });
+
+    }
+
+    // =======================================
+    // Ends Demo 3 
+
+
    function clip(object, mask){
 
         object.set({
@@ -331,6 +335,38 @@
             fill: 'transparent',
             // selectable : false
         });
+
+        //     //get all the objects into an array
+        // var objs = canvas._objects.map(function(obj){
+        //     return obj.clone();
+        // });
+
+
+        // canvas._objects.forEach(function(obj){
+        //     canvas.remove(obj);
+        // })
+
+        // debugger;
+
+
+        // var group = new fabric.Group(objs, {
+        //     top: 250,
+        //     left: 300
+        // });
+
+
+
+        // // debugger;
+
+        // canvas.add(group);
+        // group.setCoords();
+        // group.add(object.clone())
+        // group.add(mask.clone())
+        // group.center();
+        // group.setCoords();
+
+        // console.log(group)
+
 
         canvas.renderAll();
 
@@ -367,8 +403,6 @@
 
     
     }
-
-
    
 
     function findByClipName(name) {
@@ -399,7 +433,19 @@
 	
 
         ctx.translate( ctxLeft, ctxTop );
-        ctx.scale(scaleXTo1, scaleYTo1);
+
+         //logic for correct scaling
+        if (this.flipY && !this.flipX){
+        ctx.scale(scaleXTo1, -scaleYTo1);
+        } else if (this.flipX && !this.flipY){
+        ctx.scale(-scaleXTo1, scaleYTo1);
+        } else if (this.flipX && this.flipY){
+        ctx.scale(-scaleXTo1, -scaleYTo1);
+        } else {
+            ctx.scale(scaleXTo1, scaleYTo1);
+        }
+
+        // ctx.scale(scaleXTo1, scaleYTo1);
         // ctx.rotate(degToRad(this.angle * -1));
         ctx.rotate(fabric.util.degreesToRadians(this.angle * -1));
 
@@ -436,8 +482,8 @@
 
             // circular cliping area
             ctx.arc(
-                clipObj.left  - this.oCoords.tl.x + clipObj.width / 2,
-                clipObj.top  - this.oCoords.tl.y + clipObj.height / 2,
+                clipObj.oCoords.tl.x  - this.oCoords.tl.x + clipObj.width / 2,
+                clipObj.oCoords.tl.y  - this.oCoords.tl.y + clipObj.height / 2,
                 clipObj.radius,
                 0,
                 2 * Math.PI
