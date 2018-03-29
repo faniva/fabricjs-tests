@@ -60,7 +60,7 @@
      
     </div>
 
-       
+
 
 
 <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/2.2.2/fabric.js" ></script> -->
@@ -68,8 +68,7 @@
 
 <script>
     
-    var canvas = new fabric.Canvas('c'),
-    
+    var canvas = new fabric.Canvas('c'),    
         baseUrl = "images/m2P5xz0.jpg",
         svgUrl = "images/ELEPHANT_C_4.svg",
         uiControlsContainer = document.getElementById('ui-controls'),
@@ -103,12 +102,15 @@
         canvas.on('selection:created', e => {
             console.log(e);
             const selected = e.selected;
-            if(selected instanceof Array && selected.length === 2){
-               // Enable the "create mask" button
-               clipBtn.classList.remove('disabled');
-               clipBtn.removeAttribute('disabled');
-        
-           
+            if(selected instanceof Array && selected.length > 1){
+               // Enable the buttons
+               btnXAlign.classList.remove('disabled');
+               btnXAlign.removeAttribute('disabled');
+
+               btnYAlign.classList.remove('disabled');
+               btnYAlign.removeAttribute('disabled');
+
+
             } else {
                 onclearSelection();
             }
@@ -116,9 +118,82 @@
 
         canvas.on('selection:cleared', onclearSelection);
 
-        clipBtn.addEventListener('click', onClipBtnClick )
+        btnXAlign.addEventListener('click', horizontalAlign)
+        btnYAlign.addEventListener('click', verticalAlign)
+
+        
+        // Add the objects
+        addObjects();
 
 
+    }
+
+    function onclearSelection(){
+        // clipBtn.classList.add('disabled');
+        // clipBtn.setAttribute('disabled', true); 
+    }
+
+    function horizontalAlign(){
+        console.log(canvas);
+
+        debugger;
+
+        const activeObjects = canvas.getActiveObjects();
+        const activeGroup   = canvas._activeObject;
+
+        activeObjects.forEach(obj => {
+            obj.set({
+                left: 0
+            });
+        })
+
+        canvas.discardActiveObject();
+        var sel = new fabric.ActiveSelection(activeObjects, {
+          canvas: canvas,
+        });
+        canvas.setActiveObject(sel);
+        canvas.renderAll();
+   
+    }
+
+    function verticalAlign(){
+        console.log(canvas);
+
+        debugger;
+
+        const activeObjects = canvas.getActiveObjects();
+        const activeGroup   = canvas._activeObject;
+
+        activeObjects.forEach(obj => {
+            obj.set({
+                top: 0
+            });
+        })
+
+        canvas.discardActiveObject();
+        var sel = new fabric.ActiveSelection(activeObjects, {
+          canvas: canvas,
+        });
+        canvas.setActiveObject(sel);
+        canvas.renderAll();
+   
+    }
+
+
+    function addObjects(){
+
+        const text1 = new fabric.Text('Testing', {
+            top : 150,
+            left : 120
+        });
+        const text2 = new fabric.Text('FabricJS', {
+            top: 400, 
+            left: 400
+        });
+
+        canvas.add(text1);
+        canvas.add(text2);
+        canvas.renderAll();
     }
 
 
