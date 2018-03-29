@@ -79,8 +79,8 @@
 
     // Set overrides
     fabric.Object.prototype.set({
-        originX: "center",
-        originY: "center",
+        originX: "left",
+        originY: "top",
         centeredScaling: true,
     })
 
@@ -142,8 +142,13 @@
         const activeGroup   = canvas._activeObject;
 
         activeObjects.forEach(obj => {
+
+            const leftPos = obj.originX === 'left' ? - obj.getScaledWidth() / 2 
+                                : obj.originX === 'center' ? 
+                                    0 : 0;
+
             obj.set({
-                left: 0
+                left: leftPos
             });
         })
 
@@ -165,8 +170,12 @@
         const activeGroup   = canvas._activeObject;
 
         activeObjects.forEach(obj => {
+            const topPos = obj.originY === 'top' ? - obj.getScaledHeight() / 2 
+                                : obj.originY === 'center' ? 
+                                    0 : 0;
+
             obj.set({
-                top: 0
+                top: topPos
             });
         })
 
@@ -184,7 +193,9 @@
 
         const text1 = new fabric.Text('Testing', {
             top : 150,
-            left : 120
+            left : 120,
+            originX : 'center',
+            originY : 'center'
         });
         const text2 = new fabric.Text('FabricJS', {
             top: 400, 
