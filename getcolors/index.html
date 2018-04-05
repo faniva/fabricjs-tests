@@ -116,10 +116,7 @@
         // }
         let i = 0;
 
-        while( i <= imageData.data.length){
-            countPixels++;
-            i = i + 4;
-        }
+        countPixels = imageData.data.length / 4; 
 
         alert(countPixels);
         
