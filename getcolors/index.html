@@ -16,6 +16,7 @@
         }
         .container{
             display: flex;
+            flex-wrap: wrap;
         }
         #ui-controls{
             margin-left: 3em;
@@ -63,11 +64,21 @@
         <canvas id="c" width="600" height="600"></canvas>
 
         <div id="ui-controls">
-        
-            <button id="getColors" class="small primary">GET COLORS</button>
-            <button id="addOneObject" class="small">ADD 1 OBJECT</button>
-            <button id="addTwoObjects" class="small">ADD 2 OBJECTS</button>
-            <button id="addImage" class="small">ADD IMAGE</button>
+            
+            <div class="buttons">
+                <button class="small primary" onclick="getColors()">GET COLORS</button>
+                <button class="small primary" data="1" onclick="getColorsBtnClick.call(this)">GET COLORS PRECISION 100%</button>
+                <button class="small primary" data="0.5" onclick="getColorsBtnClick.call(this)">GET COLORS PRECISION 50%</button>
+                <button class="small primary" data="0.25" onclick="getColorsBtnClick.call(this)">GET COLORS PRECISION 25%</button>
+                <button class="small primary" data="0.15" onclick="getColorsBtnClick.call(this)">GET COLORS PRECISION 15%</button>
+                <br><br>
+                <button id="addOneObject" class="small">ADD 1 OBJECT</button>
+                <button id="addTwoObjects" class="small">ADD 2 OBJECTS</button>
+                <button id="addBitmap" class="small" onclick="btnAddBitmapHandler()">ADD BITMAP</button>
+                <button id="addSVG" class="small" onclick="btnAddSVGHandler()">ADD SVG</button>
+                <button id="addGroup" class="small" onclick="btnAddGroupHandler()">ADD GROUP</button>
+            </div>
+
             <br/>
             <br/>
             <div id="canvasData">
@@ -82,7 +93,8 @@
 
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/2.2.2/fabric.js" ></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/1.7.22/fabric.js" ></script>
+
 <!-- <script src="fabric.js" ></script> -->
 
 <script>
@@ -90,13 +102,15 @@
     var canvas = new fabric.Canvas('c'),    
         baseUrl = "images/m2P5xz0.jpg",
         imgUrl = "images/q9aLMza.png",
+        // svgUrl = "images/ALIEN_FACE_C_5.svg",
         svgUrl = "images/ELEPHANT_C_4.svg",
         uiControlsContainer = document.getElementById('ui-controls'),
-        btnGetColors = document.getElementById("getColors"),
+     
         canvasDataContainer = document.getElementById("canvasData").querySelector('span'),
         btnAddOneObject = document.getElementById("addOneObject"),
         btnAddTwoObjects = document.getElementById("addTwoObjects"),
-        btnAddImage = document.getElementById("addImage")
+        btnGetColors = document.getElementById("getColors"),
+        btnGetColorsEach16 = document.getElementById("getColorsEach16")
     ;
 
     // Set overrides
@@ -122,10 +136,11 @@
         })
 
 
-        btnGetColors.addEventListener('click', btnGetColorsHandler);
+ 
         btnAddOneObject.addEventListener('click', btnAddOneObjHandler);
         btnAddTwoObjects.addEventListener('click', btnAddTwoObjHandler);
-        btnAddImage.addEventListener('click', btnAddImageHandler);
+    
+
         
         // Add the objects
         addObjects();
@@ -135,6 +150,145 @@
 
     Number.prototype.round = function(places) {
         return +(Math.round(this + "e+" + places)  + "e-" + places);
+    }
+
+    fabric.Canvas.prototype.getColors = function(){
+        const colors = new Set();
+
+        debugger;
+
+        this.getObjects().forEach( obj => {
+            console.log(obj);
+
+            const objColors = obj.getColors();
+
+            debugger;
+            
+            objColors.forEach(color => {
+                if(color) colors.add(color);
+            });
+
+        });
+
+        return Array.from(colors);
+    }
+
+    fabric.Object.prototype.getColors = function(){
+
+        const colors = new Set();     
+
+        if(this instanceof fabric.Image){
+            debugger;
+            // If its a fabric image, we do something different
+            return;
+        }
+
+        if(this instanceof fabric.Group){
+            debugger;
+            this.getObjects().forEach( obj => {
+                const cls = obj.getColors();
+                cls.forEach(color => {
+                    colors.add(color);
+                })
+            })
+            return colors;
+        }
+
+        if(this instanceof fabric.PathGroup){
+            debugger;
+            // Is svg
+
+            // GET THE SVG COLORS
+            // ================================================================================
+
+            let svgPaths = this.paths;
+           
+            const pathGroups = {};
+
+            for(let k=0; k<svgPaths.length; k++){
+                // colors.indexOf(svgPaths[k].fill) === -1 ? colors.push(svgPaths[k].fill) : console.log('item already exists in array') ;
+                if(svgPaths[k].fill !== ''){
+
+                    if(!colors.has(svgPaths[k].fill)){
+                        // New color found
+                        colors.add(svgPaths[k].fill); // Add new color to colors array
+                        // pathGroups[svgPaths[k].fill] = [svgPaths[k]]; // add the current path to the group array
+
+                    } else {
+                        // console.log('item already exists in array');
+                        // // Insert this path to its corresponding path group
+                        // pathGroups[svgPaths[k].fill].push(svgPaths[k]);
+                    }
+
+                }
+
+            }
+
+            console.log(colors);
+            console.log(pathGroups);
+
+
+            // Add the groups to the pattern
+            this.colorGroups = pathGroups;
+            this.colors = colors;
+
+
+            // Check for color stops
+            const path = this.paths[0];
+            if(path.hasOwnProperty('fill') && path.fill.hasOwnProperty('colorStops') ){           
+                const colorStops = this.paths[0].fill.colorStops; // returns an array of colors
+                console.log(colorStops);
+                this.colorStops = colorStops;            
+            }
+
+            return colors;
+        }
+
+        if(this.stroke && this.strokeWidth){
+            colors.add(this.stroke);
+        }
+        if(this.fill){
+            colors.add(this.fill);
+        }
+        if(this.backgroundColor){
+            colors.add(this.backgroundColor);
+        }
+
+        return Array.from(colors);
+
+    }
+
+    function getColors(){
+        let executionTime;
+        const timeStart = performance.now();
+        const colors = canvas.getColors();
+        const timeEnd = performance.now();
+        executionTime = ( (timeEnd - timeStart) / 1000).round(4);
+        printResults(colors,executionTime);
+    }
+
+    function btnAddGroupHandler(){
+        const text = new fabric.Text('Fano', {
+            top : 100,
+            left : 50,
+            originX : 'center',
+            originY : 'center',
+            fill : '#65ae35'
+        });
+
+        const circle = new fabric.Circle({
+            radius : 150,
+            top: 500,
+            left: 200,
+            fill : 'yellow'
+        });
+
+        const group = new fabric.Group([text,circle], {
+            top : 0,
+            originY: 'top'
+        })
+
+        canvas.add(group);
     }
 
 
@@ -176,7 +330,7 @@
         img.src = baseUrl;
     }
 
-    function btnAddImageHandler(){
+    function btnAddBitmapHandler(){
 
         const img = new Image();
         img.onload = function(){
@@ -194,72 +348,136 @@
 
     }
 
-    function btnGetColorsHandler(e){
-    
+    function btnAddSVGHandler(){
+
+        fabric.loadSVGFromURL(svgUrl, (objects, options) => {
+
+            const svgObj = fabric.util.groupSVGElements(objects,options);
+
+            debugger;
+           
+            svgObj.set({
+                top: 400,
+                left: 400
+            })
+
+            canvas.add(svgObj);
+
+            canvas.renderAll();
+        })
+      
+
+    }
+
+    function getColorsBtnClick(e){
+  
         canvas.discardActiveObject();
         canvas.renderAll();
-
+        debugger;
+        const precision = this.getAttribute('data');
 
         let executionTime;
         const timeStart = performance.now();
-        const colors = getCanvasColors();
+        const {colors, tmpCanvasContainer} = getCanvasColorsWithPrecision(precision);
         const timeEnd = performance.now();
         executionTime = ( (timeEnd - timeStart) / 1000).round(4);
 
-        printResults(colors, executionTime);
+        printResults(colors, executionTime, tmpCanvasContainer);
     }
 
-    function printResults(colors, execTime){
+    function printResults(colors, execTime, tmpCanvasContainer = null){
 
         const listHtml = colors.map( color => `<li><span class="color-swatch" style="background-color: ${color}"></span> ${color}</li>` ).join('');
-        const markup = ['<ul>', listHtml, '</ul>',
-            `<p>Execution Time: 
-                ${execTime}s
-            </p>`
-        ];
+        const markup = `<ul> 
+                            ${listHtml}
+                        </ul>`
+                       
+        ;
 
-        canvasDataContainer.innerHTML = markup.join('');
+        canvasDataContainer.innerHTML = markup;
+
+        if(tmpCanvasContainer){
+            const tempDiv = document.createElement('p');
+            tempDiv.innerHTML =  `Exec Time: ${execTime}s`;        
+            tmpCanvasContainer.appendChild(tempDiv);
+        } else {
+            canvasDataContainer.innerHTML += `Exec Time: ${execTime}s`;
+        }
+   
+
     }
 
-    function getCanvasColors(){
+
+    function getCanvasColorsWithPrecision(precision = 1){
 
         const canvasColors = [];
-
-        const ctx = canvas.getContext('2d');
-        const imageData = ctx.getImageData(0,0,canvas.width, canvas.height).data;
-        let countPixels = imageData.length / 4;
-
-        debugger;
-
-
-        // Loop through each pixel
-        for(let i=0; i < countPixels; i++){
-            const color = {
-                r : imageData[i * 4],
-                g : imageData[i * 4 + 1],
-                b : imageData[i * 4 + 2],
-                a : imageData[i * 4 + 3]
-            };
-
-            // Check if color is black transparent
-            // In that case, we don't count it
-            if(color.r === 0 && color.g === 0 && color.b === 0 && color.a === 0)
-                continue;
-
-            const colorString = colorToString(color);
-
-            // Avoid duplicates
-            if(canvasColors.indexOf(colorString) < 0){
-                // New color                
-                canvasColors.push(colorString);
+   
+        if(precision){
+            if(precision > 1 || precision <= 0){
+                alert('Please select a precision value from 0 to 1')
+                return false;
             }
 
+
+            // Copy the canvas to a smaller canvas
+            const tmpCanvas = document.createElement('canvas');
+            const tmpCtx = tmpCanvas.getContext('2d');
+            tmpCanvas.width = canvas.width  *  precision;
+            tmpCanvas.height = canvas.height *  precision;
+
+            const tmpCanvasContainer = document.createElement('div');
+            tmpCanvasContainer.style.display = 'inline-block';
+            tmpCanvasContainer.appendChild(tmpCanvas);
+
+            document.body.appendChild(tmpCanvasContainer);
+
+            tmpCtx.drawImage(canvas.getElement(),0,0,tmpCanvas.width,tmpCanvas.height);
+                    
+
+            const imageData = tmpCtx.getImageData(0,0,tmpCanvas.width, tmpCanvas.height).data;
+            let countPixels = imageData.length / 4;
+            console.log('Number of pixels: ', countPixels);
+
+            // Loop through each pixel
+            for(let i=0; i < countPixels; i++){
+                const color = {
+                    r : imageData[i * 4],
+                    g : imageData[i * 4 + 1],
+                    b : imageData[i * 4 + 2],
+                    a : imageData[i * 4 + 3]
+                };
+
+                // Check if color is black transparent
+                // In that case, we don't count it
+                if(color.r === 0 && color.g === 0 && color.b === 0 && color.a === 0)
+                    continue;
+
+                const colorString = colorToString(color);
+
+                // Avoid duplicates
+                if(canvasColors.indexOf(colorString) < 0){
+                    // New color                
+                    canvasColors.push(colorString);
+                }
+
+            }
+
+            console.log(canvasColors);
+            return {
+                colors : canvasColors,
+                tmpCanvasContainer
+            };
+
+                
         }
 
-        console.log(canvasColors);
-        return canvasColors;
+     
 
     }
+
+
+
+
 
     function colorToString(color){
         return `rgba(${color.r},${color.g},${color.b})`;
@@ -300,81 +518,6 @@
         canvas.add(text1);
         canvas.renderAll();
     }
-
-
-
-
-    // ================================================================
-    // Demo 1 
-    // ================================================================
-
-
-    function loadDemo1(){
-        canvas.clear();
-
-         // Clip region 1
-        const clipRect1 = new fabric.Rect({
-            width : 100,
-            height: 300,
-            fill: '#DDD',
-            // fill: 'transparent',
-            opacity: 1, 
-            stroke: 'black',
-            strokeWidth: 0,
-            // selectable: false,
-            clipFor : 'cat',
-            name : 'mask1',
-            // statefullCache: true
-
-        });
-
-        // Clip region 2
-        var clipPoly = new fabric.Polygon([
-                { x: 180, y: 10 },
-                { x: 300, y: 50 },
-                { x: 300, y: 180 },
-                { x: 180, y: 220 }
-            ], {
-    
-            left: 0,    
-            top: 0,
-            width: 200,
-            height: 400,
-            fill: '#ddd', /* use transparent for no fill */
-            strokeWidth: 0,
-            name: 'mask2'
-            // selectable: false
-        });
-
-        // canvas.add(clipRect1);
-        canvas.add(clipPoly);
-        // clipRect1.center();
-        clipPoly.center();
-
-
-        const circle = new fabric.Circle({
-            radius : 120,
-            clipName: 'mask2',
-            originX : 'left',
-            originY : 'top',
-            strokeWidth: 0,
-            top: 300,
-            left: 5
-        });
-
-        
-        canvas.add(circle)
-        circle.center();
-
-
-
-        objA = circle;
-        objB = clipPoly;
-        
-    }
-    // =======================================
-    // Ends Demo 1 
-
 
 
 
