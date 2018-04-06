@@ -164,9 +164,12 @@
 
             debugger;
             
-            objColors.forEach(color => {
-                if(color) colors.add(color);
-            });
+            if(objColors){
+                objColors.forEach(color => {
+                    if(color) colors.add(color);
+                });
+            }            
+        
 
         });
 
@@ -282,6 +285,7 @@
             left: 200,
             fill : 'yellow'
         });
+        
 
         const group = new fabric.Group([text,circle], {
             top : 0,
