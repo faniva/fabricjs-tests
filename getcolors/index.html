@@ -313,7 +313,10 @@
             if(isChanged){
                 // alert();
                 // console.log('object prop changed:', this)
-                canvas.fire('object:changedProps', {prop : key, target: this})
+                if(this.canvas){
+                    this.canvas.fire('object:changedProps', {prop : key, target: this})
+                }
+            
             }
         
         }
