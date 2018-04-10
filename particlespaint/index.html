@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+
+
+    <style>
+        body{
+            padding: 3em;
+            font-family : sans-serif;
+            background: black;
+            color: white;
+        }
+        canvas{
+        border: 1px solid #333;
+        }
+        .container{
+            display: flex;
+            flex-wrap: wrap;
+        }
+        #ui-controls{
+            margin-left: 3em;
+        }
+        button{
+            background: #225ee5;
+            border: none;
+            outline: none;
+            color : white;
+            padding: 10px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button.small{
+            padding: 12px;
+            background: #e6e6e6;
+            color: inherit;
+        }
+        button.disabled{
+            background: #e6e6e6;
+            color: gray;
+            cursor: not-allowed;
+        }
+        button.primary{
+            background-color: #225ee5;
+            color: white;
+        }
+        .demos{
+            margin-bottom: 10px;
+        }
+        .color-controls{
+            margin-top: 30px;
+        }
+        .color-controls.disabled{
+            opacity: .4;
+            pointer-events: none;
+            user-select: none;
+            cursor: not-allowed;
+        }
+        .color-swatch{
+            display: inline-block;
+            vertical-align: middle;
+            width: 25px;
+            height: 25px;
+            margin-right: 10px;
+            background-color: black;
+            cursor: pointer;
+        }
+        .input{
+            width: 40px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>FabricJs Demo: Particles Paint with anime.js</h1>
+    <div class="container">
+        <canvas id="c" width="600" height="600"></canvas>
+
+        <div id="ui-controls">
+            
+            <div class="buttons">
+                <button class="small primary" onclick="capture()">CAPTURE</button>
+   
+            </div>
+
+
+            <br/>
+            <br/>
+            <div id="canvasData">
+           
+            </div>
+           
+        </div>
+     
+    </div>
+
+
+
+
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/1.7.22/fabric.js" ></script> -->
+<script src="fabric.js"></script>
+<script src="anime.js"></script>
+
+
+<script>
+    
+    var canvas = new fabric.Canvas('c'),
+        ctx  = canvas.getContext(),    
+        baseUrl = "images/m2P5xz0.jpg",
+        imgUrl = "images/q9aLMza.png",
+        // svgUrl = "images/ALIEN_FACE_C_5.svg",
+        svgUrl = "images/ELEPHANT_C_4.svg",
+        uiControlsContainer = document.getElementById('ui-controls'),
+        tap = ('ontouchstart' in window || navigator.msMaxTouchPoints) ? 'touchstart' : 'mousedown',
+        colors = ['#FF1461', '#18FF92', '#5A87FF', '#FBF38C'],
+        numberOfParticules = 30,
+        pointerX = 0,
+        pointerY = 0,
+        currentAnimation
+     
+    ;
+
+    // Set overrides
+    fabric.Object.prototype.set({
+        originX: "center",
+        originY: "center",
+        centeredScaling: true,
+    })
+
+    fabric.Canvas.prototype.set({
+        preserveObjectStacking : true,
+        defaultCursor: "pointer",
+        backgroundColor: 'black'
+    })
+
+
+
+    function init(){
+
+        canvas.on('object:modified', ()=> {
+            console.log('object modified')
+        })
+
+        canvas.on('after:render', ()=> {
+            console.log('after render')
+        })
+
+        canvas.on('object:selected', (e)=> {
+            // debugger;
+            console.log('object selected')
+            updateColorControls(e.target);
+        })
+
+        setCanvasSize();
+
+        document.addEventListener(tap, function(e) {
+            window.human = true;
+            render.play();
+            updateCoords(e);
+            animateParticules(pointerX, pointerY);
+        }, false);
+    
+
+        
+        // Add the objects
+        // addObjects();
+
+
+    }
+
+
+    function capture(){
+        // alert();
+
+        if(currentAnimation){
+            // alert();
+            render.pause();
+            debugger;
+            currentAnimation.pause();
+            // currentAnimation = null;
+      
+        }
+    }
+
+    var render = anime({
+        duration: Infinity,
+        // autoplay : false,
+        update: function() {
+            ctx.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
+            // console.log('dsadsad');
+        }
+        
+    });
+
+
+    function setCanvasSize() {
+
+        var canvasEl = canvas.getElement();
+        var canvasContainerEl = canvasEl.parentNode;
+
+        var initWidth = canvas.width;
+        var initHeight = canvas.height;
+
+        canvasEl.width = initWidth * 2;
+        canvasEl.height = initHeight * 2;
+
+        canvas.set({
+            width: initWidth * 2,
+            height: initHeight * 2
+        })
+
+        canvasContainerEl.style.width = initWidth + 'px';
+        canvasContainerEl.style.height = initHeight + 'px';
+   
+        canvasEl.getContext('2d').scale(2, 2);
+    }
+
+    function updateCoords(e) {
+        pointerX = e.clientX || e.touches[0].clientX;
+        pointerY = e.clientY || e.touches[0].clientY;
+    }
+
+    function animateParticules(x, y) {
+        var circle = createCircle(x, y);
+        var particules = [];
+        for (var i = 0; i < numberOfParticules; i++) {
+            particules.push(createParticule(x, y));
+        }
+
+
+        currentAnimation = anime.timeline({
+            loop: false,
+            update: function() {
+
+                console.log(currentAnimation);
+            }, 
+            complete : function(anim){
+                console.log(anim);
+                currentAnimation = null;
+                console.log(currentAnimation);
+            }
+        })
+            .add({
+                targets: particules,
+                x: function(p) { return p.endPos.x; },
+                y: function(p) { return p.endPos.y; },
+                radius: 0.1,
+                duration: anime.random(4200, 6800),
+                easing: 'easeOutExpo',
+                update: renderParticule
+            })
+            .add({
+                targets: circle,
+                radius: anime.random(80, 160),
+                lineWidth: 0,
+                alpha: {
+                    value: 0,
+                    easing: 'linear',
+                    duration: anime.random(1000, 1200),  
+                },
+                duration: anime.random(4200, 6800),
+                easing: 'easeOutExpo',
+                update: renderParticule,
+                offset: 0
+            });
+    }
+
+    function createCircle(x,y) {
+        var p = {};
+        p.x = x;
+        p.y = y;
+        p.color = '#FFF';
+        p.radius = 0.1;
+        p.alpha = .5;
+        p.lineWidth = 6;
+        p.draw = function() {
+            ctx.globalAlpha = p.alpha;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, 2 * Math.PI, true);
+            ctx.lineWidth = p.lineWidth;
+            ctx.strokeStyle = p.color;
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+        }
+        return p;
+    }
+
+    function createParticule(x,y) {
+        var p = {};
+        p.x = x;
+        p.y = y;
+        p.color = colors[anime.random(0, colors.length - 1)];
+        p.radius = anime.random(16, 32);
+        p.endPos = setParticuleDirection(p);
+        p.draw = function() {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, 2 * Math.PI, true);
+            ctx.fillStyle = p.color;
+            ctx.fill();
+        }
+        return p;
+    }
+
+    function renderParticule(anim) {
+        for (var i = 0; i < anim.animatables.length; i++) {
+            anim.animatables[i].target.draw();
+        }
+    }
+
+    function setParticuleDirection(p) {
+        var angle = anime.random(0, 360) * Math.PI / 180;
+        var value = anime.random(50, 180);
+        var radius = [-1, 1][anime.random(0, 1)] * value;
+        return {
+            x: p.x + radius * Math.cos(angle),
+            y: p.y + radius * Math.sin(angle)
+        }
+    }
+
+    Number.prototype.round = function(places) {
+        return +(Math.round(this + "e+" + places)  + "e-" + places);
+    }
+
+
+
+
+
+    function btnAddGroupHandler(){
+        const text = new fabric.Text('Fano', {
+            top : 100,
+            left : 50,
+            originX : 'center',
+            originY : 'center',
+            fill : '#65ae35'
+        });
+
+        const circle = new fabric.Circle({
+            radius : 150,
+            top: 500,
+            left: 200,
+            fill : 'yellow'
+        });
+        
+
+        const group = new fabric.Group([text,circle], {
+            top : 0,
+            originY: 'top'
+        })
+
+        canvas.add(group);
+    }
+
+
+    function btnAddOneObjHandler(){
+
+        const text2 = new fabric.Text('FabricJs', {
+            top : 350,
+            left : 510,
+            originX : 'center',
+            originY : 'center',
+            fill : 'green'
+        });
+
+        canvas.add(text2);
+        canvas.renderAll();
+    }
+    function btnAddTwoObjHandler(){
+
+        const text2 = new fabric.Text('FabricJs', {
+            top : 450,
+            left : 510,
+            originX : 'center',
+            originY : 'center',
+            fill : 'yellow'
+        });
+
+        const img = new Image();
+        img.onload = function(){
+            const imgObj = new fabric.Image(img, {
+                top : 400,
+                left: 100
+            });
+
+            canvas.add(imgObj);
+            // imgObj.center();
+            canvas.add(text2);
+            canvas.renderAll();
+        }
+        img.src = baseUrl;
+    }
+
+    function btnAddBitmapHandler(){
+
+        const img = new Image();
+        img.onload = function(){
+            const imgObj = new fabric.Image(img, {
+                top : 400,
+                left: 100
+            });
+
+            imgObj.scale(.6);
+            canvas.add(imgObj);
+            imgObj.center();
+            canvas.renderAll();
+        }
+        img.src = imgUrl;
+
+    }
+
+    function btnAddSVGHandler(){
+
+        fabric.loadSVGFromURL(svgUrl, (objects, options) => {
+
+            const svgObj = fabric.util.groupSVGElements(objects,options);
+
+            debugger;
+           
+            svgObj.set({
+                top: 400,
+                left: 400
+            })
+
+            canvas.add(svgObj);
+
+            canvas.renderAll();
+        })
+      
+
+    }
+
+
+    function printResults(execTime){
+
+  
+
+        // canvasDataContainer.innerHTML = markup;
+
+        // if(tmpCanvasContainer){
+        //     const tempDiv = document.createElement('p');
+        //     tempDiv.innerHTML =  `Exec Time: ${execTime}s`;        
+        //     tmpCanvasContainer.appendChild(tempDiv);
+        // } else {
+        //     canvasDataContainer.innerHTML += `Exec Time: ${execTime}s`;
+        // }
+   
+
+    }
+
+
+
+    function addObjects(){
+
+        const text1 = new fabric.Text('Testing', {
+            top : 150,
+            left : 120,
+            originX : 'center',
+            originY : 'center',
+            fill : 'red'
+        });
+
+     
+
+        const clipPoly = new fabric.Polygon([
+                { x: 180, y: 10 },
+                { x: 300, y: 50 },
+                { x: 300, y: 180 },
+                { x: 180, y: 220 }
+            ], {
+    
+            left: 500,    
+            top: 150,
+            width: 200,
+            height: 400,
+            fill: 'blue' /* use transparent for no fill */
+            // selectable: false
+        });
+
+        // canvas.add(clipRect1);
+        canvas.add(clipPoly);
+        // clipPoly.center();
+    
+
+        canvas.add(text1);
+        canvas.renderAll();
+    }
+
+
+
+    // Initialize
+    init();
+    
+        
+    
+</script>
+    
+</body>
+</html>
