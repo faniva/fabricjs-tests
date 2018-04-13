@@ -108,8 +108,8 @@
 
 <script>
     
-    var canvas = document.getElementById('c'),
-        ctx  = canvas.getContext('2d'),    
+    var canvas = new fabric.Canvas('c'),
+        ctx  = canvas.getContext(),    
         baseUrl = "images/m2P5xz0.jpg",
         imgUrl = "images/q9aLMza.png",
         // svgUrl = "images/ALIEN_FACE_C_5.svg",
@@ -135,7 +135,8 @@
     fabric.Canvas.prototype.set({
         preserveObjectStacking : true,
         defaultCursor: "pointer",
-        backgroundColor: 'black'
+        backgroundColor: 'black',
+        dragging: false
     })
 
 
@@ -158,10 +159,11 @@
 
         setCanvasSize();
 
-        canvas.addEventListener(tap, function(e) {
+        canvas.on('mouse:down', function(e) {
+            debugger;
             window.human = true;
             render.play();
-            updateCoords(e);
+            updateCoords(e.e);
             animateParticules(pointerX, pointerY);
         }, false);
     
@@ -186,27 +188,29 @@
 
     function setCanvasSize() {
 
-        // var canvasEl = canvas.getElement();
-        // var canvasContainerEl = canvasEl.parentNode;
+        var canvasEl = canvas.getElement();
+        var canvasContainerEl = canvasEl.parentNode;
 
-        var initWidth = canvas.width;
-        var initHeight = canvas.height;
+        var initWidth = canvas.getWidth();
+        var initHeight = canvas.getHeight();
 
-        // canvasEl.width = initWidth * 2;
-        // canvasEl.height = initHeight * 2;
+        debugger;
+
+        canvasEl.width = initWidth * 2;
+        canvasEl.height = initHeight * 2;
 
         // canvas.set({
         //     width: initWidth * 2,
         //     height: initHeight * 2
         // });
 
-        canvas.width = initWidth * 2;
-        canvas.height = initHeight * 2;
+        // canvas.width = initWidth * 2;
+        // canvas.height = initHeight * 2;
 
-        canvas.style.width = initWidth + 'px';
-        canvas.style.height = initHeight + 'px';
+        canvasContainerEl.style.width = initWidth + 'px';
+        canvasContainerEl.style.height = initHeight + 'px';
    
-        canvas.getContext('2d').scale(2, 2);
+        canvasEl.getContext('2d').scale(2, 2);
     }
 
     function updateCoords(e) {
