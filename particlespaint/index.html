@@ -83,7 +83,7 @@
         <div id="ui-controls">
             
             <div class="buttons">
-                <button class="small primary" onclick="capture()">CAPTURE</button>
+                <button class="small primary capture">CAPTURE</button>
    
             </div>
 
@@ -108,8 +108,8 @@
 
 <script>
     
-    var canvas = new fabric.Canvas('c'),
-        ctx  = canvas.getContext(),    
+    var canvas = document.getElementById('c'),
+        ctx  = canvas.getContext('2d'),    
         baseUrl = "images/m2P5xz0.jpg",
         imgUrl = "images/q9aLMza.png",
         // svgUrl = "images/ALIEN_FACE_C_5.svg",
@@ -120,7 +120,8 @@
         numberOfParticules = 30,
         pointerX = 0,
         pointerY = 0,
-        currentAnimation
+        btnCapture = document.querySelector('.capture'),
+        timelines = []
      
     ;
 
@@ -141,23 +142,23 @@
 
     function init(){
 
-        canvas.on('object:modified', ()=> {
-            console.log('object modified')
-        })
+        // canvas.on('object:modified', ()=> {
+        //     console.log('object modified')
+        // })
 
-        canvas.on('after:render', ()=> {
-            console.log('after render')
-        })
+        // canvas.on('after:render', ()=> {
+        //     console.log('after render')
+        // })
 
-        canvas.on('object:selected', (e)=> {
-            // debugger;
-            console.log('object selected')
-            updateColorControls(e.target);
-        })
+        // canvas.on('object:selected', (e)=> {
+        //     // debugger;
+        //     console.log('object selected')
+        //     updateColorControls(e.target);
+        // })
 
         setCanvasSize();
 
-        document.addEventListener(tap, function(e) {
+        canvas.addEventListener(tap, function(e) {
             window.human = true;
             render.play();
             updateCoords(e);
@@ -172,25 +173,11 @@
 
     }
 
-
-    function capture(){
-        // alert();
-
-        if(currentAnimation){
-            // alert();
-            render.pause();
-            debugger;
-            currentAnimation.pause();
-            // currentAnimation = null;
-      
-        }
-    }
-
     var render = anime({
         duration: Infinity,
         // autoplay : false,
         update: function() {
-            ctx.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
+            ctx.clearRect(0, 0, canvas.width, canvas.height );
             // console.log('dsadsad');
         }
         
@@ -199,29 +186,33 @@
 
     function setCanvasSize() {
 
-        var canvasEl = canvas.getElement();
-        var canvasContainerEl = canvasEl.parentNode;
+        // var canvasEl = canvas.getElement();
+        // var canvasContainerEl = canvasEl.parentNode;
 
         var initWidth = canvas.width;
         var initHeight = canvas.height;
 
-        canvasEl.width = initWidth * 2;
-        canvasEl.height = initHeight * 2;
+        // canvasEl.width = initWidth * 2;
+        // canvasEl.height = initHeight * 2;
 
-        canvas.set({
-            width: initWidth * 2,
-            height: initHeight * 2
-        })
+        // canvas.set({
+        //     width: initWidth * 2,
+        //     height: initHeight * 2
+        // });
 
-        canvasContainerEl.style.width = initWidth + 'px';
-        canvasContainerEl.style.height = initHeight + 'px';
+        canvas.width = initWidth * 2;
+        canvas.height = initHeight * 2;
+
+        canvas.style.width = initWidth + 'px';
+        canvas.style.height = initHeight + 'px';
    
-        canvasEl.getContext('2d').scale(2, 2);
+        canvas.getContext('2d').scale(2, 2);
     }
 
     function updateCoords(e) {
-        pointerX = e.clientX || e.touches[0].clientX;
-        pointerY = e.clientY || e.touches[0].clientY;
+        console.log(e);
+        pointerX = e.offsetX || e.touches[0].clientX;
+        pointerY = e.offsetY || e.touches[0].clientY;
     }
 
     function animateParticules(x, y) {
@@ -231,19 +222,11 @@
             particules.push(createParticule(x, y));
         }
 
+        var timeline = anime.timeline();
 
-        currentAnimation = anime.timeline({
-            loop: false,
-            update: function() {
+        timelines = [...timelines, timeline ];
 
-                console.log(currentAnimation);
-            }, 
-            complete : function(anim){
-                console.log(anim);
-                currentAnimation = null;
-                console.log(currentAnimation);
-            }
-        })
+        timeline
             .add({
                 targets: particules,
                 x: function(p) { return p.endPos.x; },
@@ -260,13 +243,25 @@
                 alpha: {
                     value: 0,
                     easing: 'linear',
-                    duration: anime.random(1000, 1200),  
+                    duration: anime.random(2800, 3000),  
                 },
                 duration: anime.random(4200, 6800),
                 easing: 'easeOutExpo',
                 update: renderParticule,
                 offset: 0
             });
+
+
+            btnCapture.onclick = function(){
+                // alert();
+                timelines.forEach( tl => tl.pause() );
+                timelines = []; // empty the array
+                // timeline.pause();
+                render.pause();
+                // canvas.dirty = true;
+
+                // canvas.renderAll();
+            }
     }
 
     function createCircle(x,y) {
